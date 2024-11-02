@@ -1,0 +1,130 @@
+{
+    "Comment": "A description of my state machine",
+    "StartAt": "Parallel",
+    "States": {
+      "Parallel": {
+        "Type": "Parallel",
+        "Branches": [
+          {
+            "StartAt": "T1_BTC",
+            "States": {
+              "T1_BTC": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "T1_BTC(cleaning)"
+                },
+                "Next": "T2_BTC",
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Next": "Fail",
+                    "Comment": "T1 failed"
+                  }
+                ]
+              },
+              "T2_BTC": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "T2_BTC (join)"
+                },
+                "Next": "LOAD_BTC",
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Comment": "T2 failed",
+                    "Next": "Fail"
+                  }
+                ]
+              },
+              "LOAD_BTC": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "Load_BTC"
+                },
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Comment": "T3 failed",
+                    "Next": "Fail"
+                  }
+                ],
+                "End": true
+              },
+              "Fail": {
+                "Type": "Fail"
+              }
+            }
+          },
+          {
+            "StartAt": "T1_XMR",
+            "States": {
+              "T1_XMR": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "T1_Monero"
+                },
+                "Next": "T2_XMR",
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Comment": "T1 failed",
+                    "Next": "Fail (1)"
+                  }
+                ]
+              },
+              "T2_XMR": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "T2_Monero"
+                },
+                "Next": "LOAD_XMR",
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Comment": "T2 failed",
+                    "Next": "Fail (1)"
+                  }
+                ]
+              },
+              "LOAD_XMR": {
+                "Type": "Task",
+                "Resource": "arn:aws:states:::glue:startJobRun.sync",
+                "Parameters": {
+                  "JobName": "Load_Monero"
+                },
+                "End": true,
+                "Catch": [
+                  {
+                    "ErrorEquals": [
+                      "States.ALL"
+                    ],
+                    "Comment": "T3 failed",
+                    "Next": "Fail (1)"
+                  }
+                ]
+              },
+              "Fail (1)": {
+                "Type": "Fail"
+              }
+            }
+          }
+        ],
+        "End": true
+      }
+    }
+  }
